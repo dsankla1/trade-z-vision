@@ -9,7 +9,221 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      companies: {
+        Row: {
+          created_at: string
+          exchange: string | null
+          id: string
+          industry: string | null
+          is_active: boolean | null
+          market_cap: number | null
+          name: string
+          sector: string | null
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exchange?: string | null
+          id?: string
+          industry?: string | null
+          is_active?: boolean | null
+          market_cap?: number | null
+          name: string
+          sector?: string | null
+          symbol: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exchange?: string | null
+          id?: string
+          industry?: string | null
+          is_active?: boolean | null
+          market_cap?: number | null
+          name?: string
+          sector?: string | null
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      current_prices: {
+        Row: {
+          company_id: string
+          current_price: number | null
+          id: string
+          last_updated: string
+          percentage_change: number | null
+          price_change: number | null
+          volume: number | null
+        }
+        Insert: {
+          company_id: string
+          current_price?: number | null
+          id?: string
+          last_updated?: string
+          percentage_change?: number | null
+          price_change?: number | null
+          volume?: number | null
+        }
+        Update: {
+          company_id?: string
+          current_price?: number | null
+          id?: string
+          last_updated?: string
+          percentage_change?: number | null
+          price_change?: number | null
+          volume?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "current_prices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_indices: {
+        Row: {
+          change_percentage: number | null
+          change_value: number | null
+          current_value: number | null
+          id: string
+          last_updated: string
+          name: string
+        }
+        Insert: {
+          change_percentage?: number | null
+          change_value?: number | null
+          current_value?: number | null
+          id?: string
+          last_updated?: string
+          name: string
+        }
+        Update: {
+          change_percentage?: number | null
+          change_value?: number | null
+          current_value?: number | null
+          id?: string
+          last_updated?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      stock_prices: {
+        Row: {
+          close_price: number | null
+          company_id: string
+          created_at: string
+          date: string
+          high_price: number | null
+          id: string
+          low_price: number | null
+          open_price: number | null
+          volume: number | null
+        }
+        Insert: {
+          close_price?: number | null
+          company_id: string
+          created_at?: string
+          date: string
+          high_price?: number | null
+          id?: string
+          low_price?: number | null
+          open_price?: number | null
+          volume?: number | null
+        }
+        Update: {
+          close_price?: number | null
+          company_id?: string
+          created_at?: string
+          date?: string
+          high_price?: number | null
+          id?: string
+          low_price?: number | null
+          open_price?: number | null
+          volume?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_prices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_portfolios: {
+        Row: {
+          avg_price: number
+          company_id: string
+          created_at: string
+          id: string
+          shares: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_price: number
+          company_id: string
+          created_at?: string
+          id?: string
+          shares: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_price?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+          shares?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_portfolios_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_watchlists: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_watchlists_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

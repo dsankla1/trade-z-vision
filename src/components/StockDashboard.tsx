@@ -2,42 +2,38 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity, ArrowUpRight, ArrowDownRight, Filter } from 'lucide-react';
+import { useCurrentPrices } from '@/hooks/useStockData';
 
 export const StockDashboard = () => {
   const [selectedTab, setSelectedTab] = useState('gainers');
+  const { data: currentPrices, isLoading } = useCurrentPrices();
 
-  const gainersData = [
-    { symbol: 'ADANIPORTS', price: 789.45, change: '+58.23', percentage: '+7.96%', volume: '2.5M' },
-    { symbol: 'TATASTEEL', price: 134.67, change: '+9.45', percentage: '+7.55%', volume: '45.2M' },
-    { symbol: 'JSWSTEEL', price: 678.90, change: '+41.23', percentage: '+6.47%', volume: '8.7M' },
-    { symbol: 'COALINDIA', price: 234.56, change: '+13.78', percentage: '+6.24%', volume: '15.3M' },
-    { symbol: 'NTPC', price: 187.32, change: '+10.45', percentage: '+5.91%', volume: '22.1M' },
-  ];
+  const gainersData = currentPrices?.filter(stock => (stock.percentage_change || 0) > 0)
+    .sort((a, b) => (b.percentage_change || 0) - (a.percentage_change || 0))
+    .slice(0, 5) || [];
 
-  const losersData = [
-    { symbol: 'BAJFINANCE', price: 6789.45, change: '-423.67', percentage: '-5.88%', volume: '1.2M' },
-    { symbol: 'HCLTECH', price: 1123.45, change: '-67.89', percentage: '-5.70%', volume: '3.4M' },
-    { symbol: 'TECHM', price: 1056.78, change: '-58.23', percentage: '-5.22%', volume: '2.8M' },
-    { symbol: 'WIPRO', price: 412.34, change: '-21.45', percentage: '-4.94%', volume: '7.6M' },
-    { symbol: 'LT', price: 2234.56, change: '-104.23', percentage: '-4.46%', volume: '1.9M' },
-  ];
+  const losersData = currentPrices?.filter(stock => (stock.percentage_change || 0) < 0)
+    .sort((a, b) => (a.percentage_change || 0) - (b.percentage_change || 0))
+    .slice(0, 5) || [];
 
-  const volumeData = [
-    { symbol: 'TATASTEEL', volume: 45.2, price: 134.67, change: '+7.55%' },
-    { symbol: 'NTPC', volume: 22.1, price: 187.32, change: '+5.91%' },
-    { symbol: 'COALINDIA', volume: 15.3, price: 234.56, change: '+6.24%' },
-    { symbol: 'ADANIPORTS', volume: 12.5, price: 789.45, change: '+7.96%' },
-    { symbol: 'JSWSTEEL', volume: 8.7, price: 678.90, change: '+6.47%' },
-  ];
+  const volumeData = currentPrices?.sort((a, b) => (b.volume || 0) - (a.volume || 0))
+    .slice(0, 5) || [];
 
-  const chartData = [
-    { name: 'Banking', gainers: 12, losers: 8 },
-    { name: 'IT', gainers: 6, losers: 14 },
-    { name: 'Energy', gainers: 18, losers: 4 },
-    { name: 'Auto', gainers: 9, losers: 11 },
-    { name: 'Pharma', gainers: 15, losers: 7 },
-    { name: 'FMCG', gainers: 8, losers: 6 },
-  ];
+  // Group stocks by sector for chart
+  const sectorData = currentPrices?.reduce((acc, stock) => {
+    const sector = stock.companies?.sector || 'Other';
+    if (!acc[sector]) {
+      acc[sector] = { name: sector, gainers: 0, losers: 0 };
+    }
+    if ((stock.percentage_change || 0) > 0) {
+      acc[sector].gainers++;
+    } else if ((stock.percentage_change || 0) < 0) {
+      acc[sector].losers++;
+    }
+    return acc;
+  }, {} as Record<string, { name: string; gainers: number; losers: number }>);
+
+  const chartData = Object.values(sectorData || {});
 
   const tabs = [
     { id: 'gainers', label: 'Top Gainers', icon: ArrowUpRight },
@@ -53,6 +49,24 @@ export const StockDashboard = () => {
       default: return gainersData;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+        <div className="animate-pulse">
+          <div className="h-6 bg-slate-700 rounded mb-6 w-48"></div>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="xl:col-span-2 space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-16 bg-slate-700/30 rounded-lg"></div>
+              ))}
+            </div>
+            <div className="h-64 bg-slate-700/30 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
@@ -94,31 +108,35 @@ export const StockDashboard = () => {
                     </span>
                   </div>
                   <div>
-                    <p className="font-medium text-white">{stock.symbol}</p>
+                    <p className="font-medium text-white">{stock.companies?.symbol}</p>
                     {selectedTab === 'volume' && (
-                      <p className="text-xs text-slate-400">Vol: {stock.volume}M</p>
+                      <p className="text-xs text-slate-400">Vol: {((stock.volume || 0) / 1000000).toFixed(1)}M</p>
                     )}
                   </div>
                 </div>
                 
                 <div className="text-right">
-                  <p className="font-medium text-white">₹{stock.price}</p>
+                  <p className="font-medium text-white">₹{stock.current_price?.toFixed(2)}</p>
                   <div className="flex items-center space-x-1">
-                    {selectedTab !== 'losers' ? (
+                    {(stock.percentage_change || 0) >= 0 ? (
                       <ArrowUpRight className="w-3 h-3 text-emerald-400" />
                     ) : (
                       <ArrowDownRight className="w-3 h-3 text-red-400" />
                     )}
                     <span className={`text-sm font-medium ${
-                      selectedTab !== 'losers' ? 'text-emerald-400' : 'text-red-400'
+                      (stock.percentage_change || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
                     }`}>
-                      {selectedTab === 'volume' ? stock.change : 
-                       selectedTab === 'gainers' ? stock.percentage : stock.percentage}
+                      {(stock.percentage_change || 0) >= 0 ? '+' : ''}{stock.percentage_change?.toFixed(2)}%
                     </span>
                   </div>
                 </div>
               </div>
             ))}
+            {getCurrentData().length === 0 && (
+              <div className="text-center py-8 text-slate-400">
+                No data available for {selectedTab}
+              </div>
+            )}
           </div>
         </div>
 

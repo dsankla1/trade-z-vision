@@ -7,8 +7,12 @@ import { TradingChart } from '../components/TradingChart';
 import { StockSearch } from '../components/StockSearch';
 import { PredictionPanel } from '../components/PredictionPanel';
 import { PortfolioSummary } from '../components/PortfolioSummary';
+import { useStockUpdater } from '../hooks/useStockUpdater';
 
 const Index = () => {
+  // Initialize automatic stock data updates
+  useStockUpdater();
+
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       <Header />
